@@ -1,0 +1,13 @@
+{
+  "feeds": [
+    {
+      "name": "AI公众号",
+      "url": "https://supsub.net/feed/812ab1de-6945-4f35-bbf2-1337af70f154/subscriptions/rss",
+      "enabled": true
+    },
+  "check_interval": 1800,
+  "content_time_limit": {
+    "enabled": true,
+    "hours": 12
+  }
+}
