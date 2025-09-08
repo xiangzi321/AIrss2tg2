@@ -303,7 +303,7 @@ class RSSManager:
                 
                 if not self._is_item_processed(item):
                     new_items.append(item)
-                    self._mark_item_processed(item)
+                    # 不再在这里标记为已处理，改为发送成功后再标记
             
             # 添加小延迟避免对RSS服务器造成过大压力
             asyncio.sleep(1)
@@ -311,8 +311,7 @@ class RSSManager:
         # 按发布时间排序
         new_items.sort(key=lambda x: x.published, reverse=True)
         
-        # 保存状态
-        self._save_state()
+        # 不再在这里保存状态，改为发送成功后再保存
         
         return new_items
     
@@ -373,17 +372,27 @@ class RSSBot:
             logger.info(f"发现 {len(new_items)} 个新的RSS项目")
             
             # 发送消息到Telegram
+            successfully_sent_items = []  # 记录成功发送的项目
             for item in new_items:
                 message = self.rss_manager.format_telegram_message(item)
                 success = await self.telegram_bot.send_message(message)
                 
                 if success:
                     logger.info(f"成功发送消息: {item.title}")
+                    successfully_sent_items.append(item)  # 只在发送成功时添加到列表
                 else:
                     logger.error(f"发送消息失败: {item.title}")
                 
                 # 添加延迟避免Telegram API限制
                 await asyncio.sleep(1)
+            
+            # 只有在成功发送后才标记为已处理并保存状态
+            if successfully_sent_items:
+                logger.info(f"成功发送 {len(successfully_sent_items)} 条消息，正在更新状态文件...")
+                for item in successfully_sent_items:
+                    self.rss_manager._mark_item_processed(item)
+                self.rss_manager._save_state()
+                logger.info("状态文件更新完成")
             
             logger.info("RSS订阅检查完成")
             
